@@ -1,7 +1,19 @@
 
+const commandLineArgs = require('command-line-args')
 var restify = require('restify');
 var cluster = require('cluster');
-var CLUSTERING = false
+
+
+const optionDefinitions = [
+  { name: 'port', alias: 'p', type: Number },
+  { name: 'clustering', alias: 'c', type: Boolean }
+]
+
+const options = commandLineArgs(optionDefinitions)
+console.log(options)
+
+var CLUSTERING = options.clustering || false
+var PORT= options.port || 3001
 
 console.log('CLUSTERING: '+ (CLUSTERING ? 'ENABLED' : 'DISABLED') )
 // Code to run if we're in the master process
@@ -40,7 +52,7 @@ if (CLUSTERING && cluster.isMaster) {
     server.get('/', respond);
     server.head('/', respond);
 
-    server.listen(3001, function() {
+    server.listen(PORT, function() {
       console.log('%s listening at %s', server.name, server.url);
     });
 
