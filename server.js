@@ -1,14 +1,47 @@
+
 var restify = require('restify');
+var cluster = require('cluster');
+var CLUSTERING = false
 
-function respond(req, res, next) {
-  res.send('hello ' + req.params.name);
-  next();
+console.log('CLUSTERING: '+ (CLUSTERING ? 'ENABLED' : 'DISABLED') )
+// Code to run if we're in the master process
+var reqNum = 0;
+
+if (CLUSTERING && cluster.isMaster) {
+
+    // Count the machine's CPUs
+    var cpuCount = require('os').cpus().length;
+    console.log('CPU COUNT: '+cpuCount)
+    // Create a worker for each CPU
+    for (var i = 0; i < cpuCount; i += 1) {
+        cluster.fork();
+    }
+
+    // Listen for dying workers
+    cluster.on('exit', function (worker) {
+
+        // Replace the dead worker, we're not sentimental
+        console.log('Worker %d died :(', worker.id);
+        cluster.fork();
+
+    });
+
+// Code to run if we're in a worker process
+} else {
+
+    function respond(req, res, next) {
+        console.log('reqNum ',reqNum);
+        reqNum++;
+      res.send('hello ');
+      next();
+    }
+
+    var server = restify.createServer();
+    server.get('/', respond);
+    server.head('/', respond);
+
+    server.listen(3001, function() {
+      console.log('%s listening at %s', server.name, server.url);
+    });
+
 }
-
-var server = restify.createServer();
-server.get('/hello/:name', respond);
-server.head('/hello/:name', respond);
-
-server.listen(8080, function() {
-  console.log('%s listening at %s', server.name, server.url);
-});
