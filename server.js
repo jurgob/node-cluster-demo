@@ -6,7 +6,8 @@ var cluster = require('cluster');
 
 const optionDefinitions = [
   { name: 'port', alias: 'p', type: Number },
-  { name: 'clustering', alias: 'c', type: Boolean }
+  { name: 'clustering', alias: 'e', type: Boolean },
+  { name: 'cpu', alias: 'c', type: Number }
 ]
 
 const options = commandLineArgs(optionDefinitions)
@@ -14,6 +15,7 @@ console.log(options)
 
 var CLUSTERING = options.clustering || false
 var PORT= options.port || 3001
+var CPU= options.cpu || require('os').cpus().length
 
 console.log('CLUSTERING: '+ (CLUSTERING ? 'ENABLED' : 'DISABLED') )
 // Code to run if we're in the master process
@@ -21,11 +23,8 @@ var reqNum = 0;
 
 if (CLUSTERING && cluster.isMaster) {
 
-    // Count the machine's CPUs
-    var cpuCount = require('os').cpus().length;
-    console.log('CPU COUNT: '+cpuCount)
-    // Create a worker for each CPU
-    for (var i = 0; i < cpuCount; i += 1) {
+    console.log('CPU USED: '+ CPU)
+    for (var i = 0; i < CPU; i += 1) {
         cluster.fork();
     }
 
